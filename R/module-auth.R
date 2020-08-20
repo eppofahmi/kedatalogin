@@ -1,0 +1,293 @@
+
+#' Authentication module
+#'
+#' @param id Module's id.
+#' @param status Bootstrap status to use for the panel and the button.
+#'  Valid status are: \code{"default"}, \code{"primary"}, \code{"success"},
+#'  \code{"warning"}, \code{"danger"}.
+#' @param tags_top A \code{tags (div, img, ...)} to be displayed on top of the authentication module.
+#' @param tags_bottom A \code{tags (div, img, ...)} to be displayed on bottom of the authentication module.
+#' @param background A optionnal \code{css} for authentication background. See example.
+#' @param choose_language \code{logical/character}. Add language selection on top ? TRUE for all supported languages
+#' or a vector of possibilities like \code{c("fr", "en")}. If enabled, \code{input$shinymanager_language} is created
+#' @param ... : Used for old version compatibility.
+#'
+#'
+#' @export
+#'
+#' @name module-authentication
+#'
+#' @importFrom htmltools tagList tags singleton
+#' @importFrom shiny NS fluidRow column textInput passwordInput actionButton uiOutput
+#'
+#' @example examples/module-auth.R
+auth_ui <- function(id, status = "primary", tags_top = NULL,
+                    tags_bottom = NULL, background = NULL,
+                    choose_language = NULL, lan = NULL, ...) {
+
+  ns <- NS(id)
+
+  if(is.null(lan)){
+    lan <- use_language()
+  }
+
+  # patch / message changing tag_img & tag_div
+  # deprecated <- list(...)
+  # if("tag_img" %in% names(deprecated)){
+  #   tags_top <- deprecated$tag_img
+  # }
+  # if("tag_div" %in% names(deprecated)){
+  #   tags_bottom <- deprecated$tag_div
+  #   warning("'tag_div' (auth_ui, secure_app) is now deprecated. Please use 'tags_bottom'", call. = FALSE)
+  # }
+  tagList(
+    singleton(tags$head(
+      tags$link(href="assets/styles-auth.css", rel="stylesheet"),
+      tags$script(src = "assets/bindEnter.js"),
+      if(!is.null(background)){
+        background <- gsub(";$", "", background)
+        tags$style(HTML(paste0(".panel-auth {background:", background, ",#2D98DA;}")))
+      }
+    )),
+    tags$div(
+      id = ns("auth-mod"), class = "panel-auth",
+      tags$div(style = "height: 140px;"),
+      fixedPage(
+        fluidRow(
+          column(
+            class="col-xs-12 col-sm-6 col-md-4 col-md-offset-4",
+            width = 4, offset = 4,
+            tags$div(
+              class = paste0("panel panel-", status),
+              tags$div(
+                class = "panel-body",
+                {
+                  choices = lan$get_language()
+                  if(is.logical(choose_language) && choose_language){
+                    choices = lan$get_language_registered()
+                  } else if(is.character(choose_language)){
+                    choices = unique(c(intersect(choose_language, lan$get_language_registered()), lan$get_language()))
+                  }
+
+                  selected = ifelse(lan$get_language() %in% choices,
+                                    lan$get_language(),
+                                    choices[1])
+                  if(length(choices) == 1){
+                    style = "display:none"
+                  } else {
+                    style = "margin-bottom:-100px;"
+                  }
+                  tags$div(style = style,
+                           fluidRow(
+                             column(width = 3, offset = 6, uiOutput(ns("label_language"))),
+                             column(3,
+                                    tags$div(
+                                      style = "text-align: left; font-size: 12px;",
+                                      selectInput(
+                                        inputId = ns("language"),
+                                        label = NULL,
+                                        choices = choices,
+                                        selected = selected,
+                                        width = "100%"
+                                      )
+                                    )
+                             )
+                           )
+                  )
+                },
+                tags$div(
+                  class = "login-image-log",
+                  style = "display: block; width: 80%; margin: 0 auto; margin-top: 20px; margin-bottom: 20px;",
+                  tags$div(img(src="img/endgraf-logo-full-blue.svg", width = "100%"),
+                          id = ns("shinymanager-auth-head")
+                          )
+                ),
+                # tags$br(),
+                textInput(
+                  inputId = ns("user_id"),
+                  label = "Email Adress", placeholder = "Username/Email",
+                  width = "100%"
+                ),
+                passwordInput(
+                  inputId = ns("user_pwd"),
+                  label = "Password", placeholder = "Password",
+                  width = "100%"
+                ),
+                # tags$br(),
+                actionButton(
+                  inputId = ns("go_auth"),
+                  label = "SIGN IN",
+                  width = "100%",
+                  class = paste0("btn-", status)
+                ),
+                # tags$br(), tags$br(),
+                tags$script(
+                  sprintf("bindEnter('%s');", ns(""))
+                ),
+                tags$div(id = ns("result_auth")),
+                if (!is.null(tags_bottom)) tags$div(style = "margin-top:-10px;", tags$hr()), tags_bottom,
+                uiOutput(ns("update_shinymanager_language"))
+                )
+              )
+            ) # column
+          ), #fluidrow
+        fluidRow(
+          column(
+            style = "color: rgba(255, 255, 255, 0.6); text-decoration-line: underline;",
+            width = 4, offset = 4,
+            tags$div(class = "login-info",
+                     "If you have any question regarding this app, please contact us",
+                     tags$a(href = "#", "here."))
+            )
+          ) #fluidrow
+
+        ) # fixedPage
+      )
+    )
+  }
+
+
+
+#' @param input,output,session Standard Shiny server arguments.
+#' @param check_credentials Function with two arguments (\code{user},
+#'  the Email Adress provided by the user and \code{password}, his/her password).
+#'  Must return \code{TRUE} or \code{FALSE}.
+#'  To use additionnals arguments, set them with \code{purrr::partial} (see examples).
+#' @param use_token Add a token in the URL to check authentication. Should not be used directly.
+#' @param lan An langauge object. Should not be used directly.
+#'
+#' @export
+#'
+#' @rdname module-authentication
+#'
+#' @return A \code{reactiveValues} with 3 slots :
+#'  \itemize{
+#'   \item \strong{result} : logical, result of authentication.
+#'   \item \strong{user} : character, name of connected user.
+#'   \item \strong{user_info} : information about the user.
+#'  }
+#'
+#' @importFrom htmltools tags
+#' @importFrom shiny reactiveValues observeEvent removeUI updateQueryString insertUI is.reactive icon updateActionButton updateTextInput renderUI
+#' @importFrom stats setNames
+auth_server <- function(input, output, session, check_credentials,
+                        use_token = FALSE, lan = NULL) {
+
+  ns <- session$ns
+  jns <- function(x) {
+    paste0("#", ns(x))
+  }
+
+  if(!is.reactive(lan)){
+    if(is.null(lan)){
+      lan <- reactive(use_language())
+    } else {
+      lan <- reactive(lan)
+    }
+  }
+
+
+  observe({
+    session$sendCustomMessage(
+      type = "focus_input",
+      message = list(inputId = ns("user_id"))
+    )
+  })
+
+  observe({
+    if(!is.null(input$language)){
+      lan()$set_language(input$language)
+      updateTextInput(session, inputId = "user_id", label = "Email Adress")
+      updateTextInput(session, inputId = "user_pwd", label = "Password")
+      updateActionButton(session, inputId = "go_auth", label = "SIGN IN")
+
+      # session$sendCustomMessage(
+      #   type = "update_auth_title",
+      #   message = list(
+      #     inputId = ns("shinymanager-auth-head"),
+      #     title = img(src="endgraf-logo-full-blue.svg")
+      #   )
+      # )
+
+      # output$update_shinymanager_language <- renderUI({
+      #   shinymanager_language(lan()$get_language())
+      # })
+      #
+      # output$label_language <- renderUI({
+      #   tags$p(paste0(lan()$get("Language"), " :"),
+      #          style = "text-align: right; font-style: italic; margin-top:5px")
+      # })
+
+    }
+  })
+
+
+  authentication <- reactiveValues(result = FALSE, user = NULL, user_info = NULL)
+
+  observeEvent(input$go_auth, {
+    removeUI(selector = jns("msg_auth"))
+    res_auth <- check_credentials(input$user_id, input$user_pwd)
+    if (isTRUE(res_auth$result)) {
+      removeUI(selector = jns("auth-mod"))
+      authentication$result <- TRUE
+      authentication$user <- input$user_id
+      authentication$user_info <- res_auth$user_info
+      # token <- generate_token(input$user_id)
+      token <- .tok$generate(input$user_id)
+
+      if (isTRUE(use_token)) {
+        # add_token(token, as.list(res_auth$user_info))
+        .tok$add(token, as.list(res_auth$user_info))
+        updateQueryString(queryString = paste0("?token=", token, "&language=", lan()$get_language()), session = session)
+        session$reload()
+      }
+
+    } else {
+      if (is.null(res_auth$user_info)) {
+        save_logs_failed(input$user_id, status = "Unknown user")
+        insertUI(
+          selector = jns("result_auth"),
+          ui = tags$div(
+            id = ns("msg_auth"), class = "alert alert-danger",
+            icon("exclamation-triangle"), "Email Adress or password are incorrect"
+          )
+        )
+      } else if (isTRUE(res_auth$expired)) {
+        save_logs_failed(input$user_id, status = "Expired")
+        insertUI(
+          selector = jns("result_auth"),
+          ui = tags$div(
+            id = ns("msg_auth"), class = "alert alert-danger",
+            icon("exclamation-triangle"), lan()$get("Your account has expired")
+          )
+        )
+      } else {
+        if (!isTRUE(res_auth$authorized)) {
+          save_logs_failed(input$user_id, status = "Unauthorized")
+          insertUI(
+            selector = jns("result_auth"),
+            ui = tags$div(
+              id = ns("msg_auth"), class = "alert alert-danger",
+              icon("exclamation-triangle"), lan()$get("You are not authorized for this application")
+            )
+          )
+        } else {
+          save_logs_failed(input$user_id, status = "Wrong pwd")
+          insertUI(
+            selector = jns("result_auth"),
+            ui = tags$div(
+              id = ns("msg_auth"), class = "alert alert-danger",
+              icon("exclamation-triangle"), lan()$get("Email Adress or password are incorrect")
+            )
+          )
+        }
+      }
+    }
+  }, ignoreInit = TRUE)
+
+  return(authentication)
+}
+
+
+
+
