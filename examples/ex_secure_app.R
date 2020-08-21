@@ -2,8 +2,8 @@ if (interactive()) {
 
   # define some credentials
   credentials <- data.frame(
-    user = c("eppo", "shinymanager"),
-    password = c("fahmi", "12345"),
+    user = c("usertest", "shinymanager"),
+    password = c("passtest", "12345"),
     stringsAsFactors = FALSE
   )
 

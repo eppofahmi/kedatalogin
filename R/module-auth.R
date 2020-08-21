@@ -1,4 +1,3 @@
-
 #' Authentication module
 #'
 #' @param id Module's id.
@@ -53,7 +52,7 @@ auth_ui <- function(id, status = "primary", tags_top = NULL,
       id = ns("auth-mod"), class = "panel-auth",
       tags$div(style = "height: 140px;"),
       fixedPage(
-        fluidRow(
+        fixedRow(
           column(
             class="col-xs-12 col-sm-6 col-md-4 col-md-offset-4",
             width = 4, offset = 4,
@@ -66,7 +65,8 @@ auth_ui <- function(id, status = "primary", tags_top = NULL,
                   if(is.logical(choose_language) && choose_language){
                     choices = lan$get_language_registered()
                   } else if(is.character(choose_language)){
-                    choices = unique(c(intersect(choose_language, lan$get_language_registered()), lan$get_language()))
+                    choices = unique(c(intersect(choose_language, lan$get_language_registered()),
+                                       lan$get_language()))
                   }
 
                   selected = ifelse(lan$get_language() %in% choices,
@@ -101,31 +101,29 @@ auth_ui <- function(id, status = "primary", tags_top = NULL,
                   tags$div(img(src="img/endgraf-logo-full-blue.svg", width = "100%"),
                           id = ns("shinymanager-auth-head")
                           )
-                ),
-                # tags$br(),
+                  ),
                 textInput(
                   inputId = ns("user_id"),
                   label = "Email Adress", placeholder = "Username/Email",
                   width = "100%"
-                ),
+                  ),
                 passwordInput(
                   inputId = ns("user_pwd"),
                   label = "Password", placeholder = "Password",
                   width = "100%"
-                ),
-                # tags$br(),
+                  ),
                 actionButton(
                   inputId = ns("go_auth"),
                   label = "SIGN IN",
                   width = "100%",
-                  class = paste0("btn-", status)
-                ),
-                # tags$br(), tags$br(),
+                  class = paste0("btn-", status),
+                  style="color: #fff; background-color: #2D98DA"
+                  ),
                 tags$script(
                   sprintf("bindEnter('%s');", ns(""))
-                ),
+                  ),
                 tags$div(id = ns("result_auth")),
-                if (!is.null(tags_bottom)) tags$div(style = "margin-top:-10px;", tags$hr()), tags_bottom,
+                if (!is.null(tags_bottom)) tags$div(style = "margin-top:-10px;"), tags_bottom,
                 uiOutput(ns("update_shinymanager_language"))
                 )
               )
@@ -133,14 +131,13 @@ auth_ui <- function(id, status = "primary", tags_top = NULL,
           ), #fluidrow
         fluidRow(
           column(
-            style = "color: rgba(255, 255, 255, 0.6); text-decoration-line: underline;",
             width = 4, offset = 4,
             tags$div(class = "login-info",
                      "If you have any question regarding this app, please contact us",
-                     tags$a(href = "#", "here."))
+                     tags$a(href = "mailto:info@kedata.online", "here.")
+                     )
             )
           ) #fluidrow
-
         ) # fixedPage
       )
     )
