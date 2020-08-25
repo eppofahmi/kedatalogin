@@ -59,7 +59,7 @@ secure_app <- function(ui, ..., enable_admin = FALSE, head_auth = NULL, theme = 
           do.call(pwd_ui, args),
           shinymanager_where("password"),
           shinymanager_language(lan$get_language())
-        )
+          )
         return(pwd_ui)
       }
       if (isTRUE(enable_admin) && .tok$is_admin(token) & identical(admin, "true") & !is.null(.tok$get_sqlite_path())) {
@@ -69,12 +69,12 @@ secure_app <- function(ui, ..., enable_admin = FALSE, head_auth = NULL, theme = 
           header = tagList(
             tags$style(".navbar-header {margin-left: 16.66% !important;}"),
             fab_button(
-              actionButton(
-                inputId = ".shinymanager_logout",
-                label = NULL,
-                tooltip = lan$get("Logout"),
-                icon = icon("sign-out")
-              ),
+              # actionButton(
+              #   inputId = ".shinymanager_logout",
+              #   label = NULL,
+              #   tooltip = lan$get("Logout"),
+              #   icon = icon("sign-out")
+              # ),
               actionButton(
                 inputId = ".shinymanager_app",
                 label = NULL,
@@ -99,12 +99,12 @@ secure_app <- function(ui, ..., enable_admin = FALSE, head_auth = NULL, theme = 
       } else {
         if (isTRUE(enable_admin) && .tok$is_admin(token) && !is.null(.tok$get_sqlite_path())) {
           menu <- fab_button(
-            actionButton(
-              inputId = ".shinymanager_logout",
-              label = NULL,
-              tooltip = lan$get("Logout"),
-              icon = icon("sign-out")
-            ),
+            # actionButton(
+            #   inputId = ".shinymanager_logout",
+            #   label = NULL,
+            #   tooltip = lan$get("Logout"),
+            #   icon = icon("sign-out")
+            # ),
             actionButton(
               inputId = ".shinymanager_admin",
               label = NULL,
@@ -116,14 +116,15 @@ secure_app <- function(ui, ..., enable_admin = FALSE, head_auth = NULL, theme = 
           if (isTRUE(enable_admin) && .tok$is_admin(token) && is.null(.tok$get_sqlite_path())) {
             warning("Admin mode is only available when using a SQLite database!", call. = FALSE)
           }
-          menu <- fab_button(
-            actionButton(
-              inputId = ".shinymanager_logout",
-              label = NULL,
-              tooltip = lan$get("Logout"),
-              icon = icon("sign-out")
-            )
-          )
+          menu <- ""
+          # menu <- fab_button(
+          #   actionButton(
+          #     inputId = ".shinymanager_logout",
+          #     label = NULL,
+          #     tooltip = lan$get("Logout"),
+          #     icon = icon("sign-out")
+          #   )
+          # )
         }
         save_logs(token)
         if (is.function(ui)) {
@@ -282,15 +283,13 @@ secure_server <- function(check_credentials, timeout = 15, inputs_list = NULL,
     session$reload()
   }, ignoreInit = TRUE)
 
-  observeEvent(session$input$.shinymanager_logout, {
-    token <- getToken(session = session)
-    logout_logs(token)
-    .tok$remove(token)
-    clearQueryString(session = session)
-    session$reload()
-  }, ignoreInit = TRUE)
-
-
+  # observeEvent(session$input$.shinymanager_logout, {
+  #   token <- getToken(session = session)
+  #   logout_logs(token)
+  #   .tok$remove(token)
+  #   clearQueryString(session = session)
+  #   session$reload()
+  # }, ignoreInit = TRUE)
 
   if (timeout > 0) {
 
