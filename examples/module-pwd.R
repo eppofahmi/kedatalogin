@@ -1,7 +1,7 @@
 if (interactive()) {
 
   library(shiny)
-  library(shinymanager)
+  library(kedatalogin)
 
   ui <- fluidPage(
     tags$h2("Change password module"),

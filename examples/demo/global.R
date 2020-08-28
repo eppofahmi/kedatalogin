@@ -3,7 +3,7 @@
 # Global ------------------------------------------------------------------
 
 library(shiny)
-library(shinymanager)
+library(kedatalogin)
 
 
 # data.frame with credentials info
